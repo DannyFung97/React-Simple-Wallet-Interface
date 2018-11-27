@@ -9,7 +9,7 @@ class Balance extends Component{
             wallet: new Wallet(props.mnemonic, {supported_coins:["flo"],discover:false}),
             bal: "*Loading*" /* Placeholder as flo coins are being accessed */
         };
-        this.showBalance()
+        // this.showBalance()
     }
 
     /* Gets flo coins from wallet object based on its mnemonic and sets bal to amount of flo coins */

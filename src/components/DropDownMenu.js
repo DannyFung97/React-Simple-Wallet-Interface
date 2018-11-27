@@ -32,8 +32,6 @@ class DropDownMenu extends Component{
     }
 
     render(){
-        //TODO, list turns into an object when inserted objects, something we don't want
-        console.log("list", this.props.list);
         return(
             <div className="dd-wrapper">
                 <div className="dd-header" onClick={this.toggleList}>

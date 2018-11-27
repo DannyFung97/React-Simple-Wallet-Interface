@@ -2,74 +2,61 @@ import React, { Component } from 'react';
 import {util} from 'oip-hdmw';
 import DropDownMenu from "./DropDownMenu.js";
 import ClipboardJS from 'clipboard';
+import Toggle from "./Toggle.js";
 
 class SelectAddress extends Component {
-    constructor(){
-        super();
+    constructor(props){
+        super(props);
+
         new ClipboardJS(".copyToClipboard")
-        this.currentlySelectedAddress = ""
-        this.state = {
-            address: [
-                // {
-                //     id: 0,
-                //     title: '2869 Historic Decatur Rd, San Diego, CA 92106',
-                //     selected: false,
-                //     key: 'address'
-                // }
-            ]
-        }
 
         this.addAddress = this.addAddress.bind(this);
-        this.onMyAddressChange = this.onMyAddressChange.bind(this);
     }
 
     addAddress() {
         let a = prompt("Enter a new address");
-        if (util.isValidPublicAddress(a) && this.state.address.length > 0) {
-            let tempArray = this.state.address.slice();
-            tempArray.push({id: this.state.address[this.state.address.length - 1].id + 1, title: a, selected: false, key: 'address'});
-            this.setState({address: tempArray})
+        if(util.isValidPublicAddress(a) && this.props.addresses.find(e => {
+            return e.title === a;
+        }) !== undefined){
+            alert("This address exists.");
         }
-        else if(util.isValidPublicAddress(a) && this.state.address.length <= 0){
-            let tempArray = this.state.address.slice();
+        else if (util.isValidPublicAddress(a) && this.props.addresses.length > 0) {
+            let tempArray = this.props.addresses.slice();
+            tempArray.push({id: this.props.addresses[this.props.addresses.length - 1].id + 1, title: a, selected: false, key: 'address'});
+            this.props.addNewAddresses(tempArray, a);
+        }
+        else if(util.isValidPublicAddress(a) && this.props.addresses.length <= 0){
+            let tempArray = this.props.addresses.slice();
             tempArray.push({id: 0, title: a, selected: false, key: 'address'});
-            this.setState({address: tempArray})
+            this.props.addNewAddresses(tempArray, a);
         }
         else{
             alert('Please enter valid address.');
         }
     }
 
-    onMyAddressChange(){
-        for(let a of this.state.address){
-            if(a.selected = true){
-                this.props.onMyAddressChange(a.title);
-            }
-        }
-    }
-
     resetThenSet = (id, key) => {
-        let temp = JSON.parse(JSON.stringify(this.state[key]))
+        let temp = JSON.parse(JSON.stringify(this.props.state[key]))
         temp.forEach(item => item.selected = false);
         temp[id].selected = true;
-        console.log(temp[id].title)
-        this.currentlySelectedAddress = temp[id].title;
-        this.onMyAddressChange();
-        this.setState({
-            [key]: temp
-        })
+        this.props.setAddress(temp[id].title);
     };
 
     render() {
         return (
             <div className="AddressSelection">
                 <div className="wrapper">
+                    <h4>Show transactions of selected address only</h4>
+                        <Toggle
+                            setView={this.props.setView}
+                        />
+                    <div className="divider_two" />
                     <DropDownMenu
                         title="Select Your Address"
-                        list={this.state.address}
+                        list={this.props.addresses}
                         resetThenSet={this.resetThenSet}
                     />
-                    <button className="btn copyToClipboard" data-clipboard-text={this.currentlySelectedAddress}>
+                    <button className="btn copyToClipboard" data-clipboard-text={this.props.myAddress}>
                         Copy
                     </button>
                     <div className="divider" />
