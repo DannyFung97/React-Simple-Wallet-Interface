@@ -22,9 +22,13 @@ class InputAmountAndAddress extends Component {
     }
 
     sendFunds() {
-        let fr = {};
-        fr[this.props.address] = this.amount;
-        this.wallet.getCoin("flo").sendPayment({ to: this.to, from: fr });
+        let toArr = {};
+        toArr[this.to] = this.amount;
+        console.log("the address of to: ", typeof toArr)
+        console.log("The address ", this.props.address, " is sending money to ", this.to);
+        this.props.wallet.sendPayment({ to: toArr, coin: "flo_testnet"}).then(() => {
+            alert('Transaction successful.');
+        }).catch(err => console.log("Error in sending funds: ", err));
     }
 
     handleSubmit(event) {
@@ -44,7 +48,7 @@ class InputAmountAndAddress extends Component {
             <form onSubmit={this.handleSubmit}>
                 <label>
                     Send:
-                    <input type="number" amount={this.amount} onChange={this.handleAmountChange} style={{ width: "150px", paddingLeft: "10px" }} placeholder={"FLO"} />
+                    <input type="number" step="0.00000001" amount={this.amount} onChange={this.handleAmountChange} style={{ width: "150px", paddingLeft: "10px" }} placeholder={"FLO"} />
                 </label>
                 <label style={{ paddingLeft: "10px" }}>
                     To:

@@ -10,36 +10,40 @@ import TransactionRow from "./TransactionRow.js";
 class WalletComponent extends Component {
     constructor(props) {
         super(props);
-        let wal = new Wallet(props.mnemonic, { discover: false });
+        let wal = new Wallet('00000000000000000000000000000000', {
+            discover: false,
+            supported_coins: ['flo', 'flo_testnet']
+        })
         this.state = {
             wallet: wal,
             floExplorer: wal.networks.flo.explorer,
             myAddress: undefined,
             address: [
-                {
-                    id: 0,
-                    title: 'FAPiw7EFMYmYK1mUuQQekyLsmimUBQT9zd',
-                    selected: false,
-                    key: 'address'
-                },
-                {
-                    id: 1,
-                    title: 'FPznv9i9iHX5vt4VMbH9x2LgUcrjtSn4cW',
-                    selected: false,
-                    key: 'address'
-                },
-                {
-                    id: 2,
-                    title: 'FHSugHTMpn4D8U8CWuFDmyPXanfQ6zpAF9',
-                    selected: false,
-                    key: 'address'
-                }/*,
-                {
-                    id: 3,
-                    title: 'FCG37kpQXNd3AjdqacbEVELTfC7SCD2vzK',
-                    selected: false,
-                    key: 'address'
-                }*/
+                // {
+                //     id: 0,
+                //     title: 'FAPiw7EFMYmYK1mUuQQekyLsmimUBQT9zd',
+                //     selected: false,
+                //     key: 'address'
+                // }
+                // ,
+                // {
+                //     id: 1,
+                //     title: 'FPznv9i9iHX5vt4VMbH9x2LgUcrjtSn4cW',
+                //     selected: false,
+                //     key: 'address'
+                // },
+                // {
+                //     id: 2,
+                //     title: 'FHSugHTMpn4D8U8CWuFDmyPXanfQ6zpAF9',
+                //     selected: false,
+                //     key: 'address'
+                // },
+                // {
+                //     id: 3,
+                //     title: 'FCG37kpQXNd3AjdqacbEVELTfC7SCD2vzK',
+                //     selected: false,
+                //     key: 'address'
+                // }
             ],
             transactions: [
                 /*
@@ -62,6 +66,7 @@ class WalletComponent extends Component {
         this.addNewAddresses = this.addNewAddresses.bind(this);
         this.setAddress = this.setAddress.bind(this);
         this.addNewTransactions = this.addNewTransactions.bind(this);
+        this.getAllAddresses = this.getAllAddresses.bind(this);
     }
 
     setView() {
@@ -70,8 +75,18 @@ class WalletComponent extends Component {
     }
 
     componentDidMount() {
-        console.log('START: first gather all txs for all addresses')
+        console.log('START')
+        this.getAllAddresses();
         this.getAllTransactions().then().catch(err => { console.log("GATHER_ERROR: ", err); });
+    }
+
+    getAllAddresses() {
+        let account = this.state.wallet.getCoin("flo_testnet").getAccount(0);
+        let addrs = [];
+        for (let i = 0; i < 10; i++) {
+            addrs.push({ id: i, title: account.getAddress(0, i).getPublicAddress(), selected: false, key: 'address' });
+        }
+        this.setState({ address: addrs });
     }
 
     addNewAddresses(allAddresses, a) {
@@ -84,48 +99,21 @@ class WalletComponent extends Component {
         this.state.floExplorer.getTransactionsForAddress(a).then(transactions => {
             let txs = transactions.txs;
             for (let tx of txs) {
-                tempTxs.push({ tx: tx, addr: a.title });
+                tempTxs.push({ tx: tx, addr: a });
                 console.log("pushed new transactions")
             }
+            tempTxs.sort(function (a, b) {
+                return b.tx.time - a.tx.time;
+            });
+            this.setState({ transactions: tempTxs });
+            console.log("What is transactions", this.state.transactions)
         }).catch(err => {
             console.log({ success: false, message: "Failed to get txs from a", address: a, error: err })
         });
-        tempTxs.sort(function (a, b) {
-            return b.tx.time - a.tx.time;
-        });
-        this.setState({ transactions: tempTxs });
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        // if Address is undefined and viewSelectedAddressOnly has changed, do not rerender.
-        if (this.state.myAddress === undefined && this.state.viewSelectedAddressOnly !== nextState.viewSelectedAddressOnly) {
-            console.log("passsssss");
-            return false;
-        }
-
-        // if the selected address is changed while viewSelectedAddressOnly is false, do not rerender.
-        if ((this.state.myAddress !== nextState.myAddress) && !this.state.viewSelectedAddressOnly
-            && (this.state.viewSelectedAddressOnly === nextState.viewSelectedAddressOnly)) {
-            return false;
-        } else {
-            return true;
-        }
     }
 
     componentDidUpdate(prevProps, prevState) {
         console.log('component did update')
-        // console.log('toAddress: ', this.state.toAddress);
-        // console.log('amount: ', this.state.amount);
-        if (this.state.viewSelectedAddressOnly) {
-            console.log('single_updated');
-            if (this.state.myAddress !== undefined && this.state.myAddress !== prevState.myAddress) {
-                console.log("single_getTransactions");
-                this.getTransactions(this.state.myAddress);
-            }
-        } else if (this.state.viewSelectedAddressOnly !== prevState.viewSelectedAddressOnly) {
-            console.log('all_updated');
-            this.setState({ Transactions: this.state.transactions });
-        }
     }
 
     async getAllTransactions() {
@@ -146,7 +134,6 @@ class WalletComponent extends Component {
             }
         }
         if (tempTxs.length > 0) {
-            console.log("tempTxs: " + tempTxs);
             tempTxs.sort(function (a, b) {
                 return a.tx.time - b.tx.time;
             });
@@ -169,45 +156,15 @@ class WalletComponent extends Component {
         this.setState({ myAddress: a });
     }
 
-    // getTransactions(address) {
-    // let temp = [];
-    // for (let t of this.state.transactions) {
-    //     console.log('get transactions: ', t)
-    //     for (let param in t) {
-    //         if (t[param] === address) {
-    //             temp.push(t)
-    //         }
-    //         for (let _param in param) {
-    //             if (param[_param] === address) {
-    //                 temp.push(t)
-    //             }
-    //             for (let __param in _param) {
-    //                 if (_param[__param] === address) {
-    //                     temp.push(t)
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     // if (t.addr === address || address === t.tx.vin[0].addr || address === t.tx.vout[0].scriptPubKey.addresses[0]) {
-    //     //     temp.push(t);
-    //     //     console.log('single pushed: ' + t);
-    //     // }
-    // }
-    // temp.sort(function (a, b) {
-    //     return b.tx.time - a.tx.time;
-    // });
-    //     this.setState({ transactions: temp });
-    // }
-
     render() {
+        console.log("main address: ", this.state.wallet.getCoin("flo_testnet").getMainAddress().getPublicAddress());
         console.log('Rendering');
         let displayTXs = [];
-        if (!this.state.viewSelectedAddressOnly || this.state.myAddress === undefined) {
+        if (!this.state.viewSelectedAddressOnly) {
             displayTXs = this.state.transactions;
             console.log(displayTXs);
         } else {
             for (let t of this.state.transactions) {
-                console.log('get transactions: ', t)
                 for (let param in t) {
                     if (t[param] === this.state.myAddress) {
                         displayTXs.push(t)
@@ -228,14 +185,11 @@ class WalletComponent extends Component {
                 return b.tx.time - a.tx.time;
             });
         }
-        console.log('logging displayTxs...', !!this.displayTXs);
         return (
             <div className="WholeWallet">
                 <div className="MyWallet">
-                    {/* {displayTXs.map(tx,i => {
-
-                })} */}
-                    <Balance mnemonic={this.state.wallet.mnemonic} />
+                    { console.log("What is this: ", this.state.myAddress) }
+                    <Balance address={this.state.myAddress} />
                     <div className="Address">
                         <SelectAddress
                             setView={this.setView}
@@ -248,7 +202,7 @@ class WalletComponent extends Component {
                     </div>
                     <div className="IAAA">
                         <InputAmountAndAddress onToAddressChange={this.onToAddressChange} address={this.state.myAddress}
-                            onAmountChange={this.onAmountChange} amount={this.state.amount} />
+                            onAmountChange={this.onAmountChange} amount={this.state.amount} wallet={this.state.wallet} />
                     </div>
                 </div>
                 <div className="Table">
